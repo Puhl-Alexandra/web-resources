@@ -1,0 +1,386 @@
+Azure:
+search -> virtual network (azure hálózata) -> create
+
+Project details
+Subscription: Subscription 4
+Resource Group: Puhl-RG
+
+Instance details
+Virtual network name: vnet-pual
+Region: (Europe)North Europe
+
+Security
+semmit nem állítunk itt be
+
+IP address
+192.168.6.0/24
+ceruza -> alhálózat /28-as (lefotóztam)
+save -> next -> next -> create
+
+Home -> Resource group -> Puhl-RG -> create -> Marketplace
+[smalldisk] Windows Server 2022 gen 2
+
+Project details
+Subscription: Subscription 4
+Resource Group: Puhl-RG
+
+Instance details
+Virtual network name: vmwin-pual
+Region: (Europe)North Europe
+Zone 1-2-3
+Size: Standard_B1ms 1vcpu 2GiB memory
+
+Administartive account
+Username: azureadmin
+Password: #Aa123456789@
+Portok: RDP (3389)
+
+OS disk size: image default 30GB
+SSD: Standard 
+Delete with VM: pipa
+
+Network
+Virtual network: vnet-pual
+Subnet: default (192.168.6.0/24)
+Public IP: (new) vmwin-pual-ip
+NIC network security group: Basic
+Public inbund ports: Allow
+Select inbund ports: RDP (3389)
+
+Management
+Enable auto-shutdown: pipa
+Notification before shutdown: nincs pipa
+
+Monitoring
+Boot diagnostics: Enable with managed storage account
+-> ->
+
+Review + create
+
+Public IP-t kimásoljuk és távoli asztallal csatlakozunk a virtuális géphez
+
+Win core telepítés:
+Install-WindowsFeature web-server -IncludeManagementTools
+cd c:\inetpub\wwwroot
+notepad index.html
+
+<!DOCTYPE html>
+<html>
+<meta charset="utf8">
+<head>
+<p>Puhl Alexandra</p>
+<title>CORE</title>
+</head>
+<body>
+
+<h1> Gyakorlás weboldal 2025 </h1>
+<p> Készítette: Puhl Alexandra </p>
+
+</body>
+</html>
+
+NGS
+Add inbount: 80-as portot kinyitjuk
+
+Azure-ban a virtuális gépnél
+DNS
+dns name: vmwinpual
+copy és a keresőbe beillesztjük
+
+
+Linux
+sudo bash
+apt update
+
+CMD
+ssh azure admin@"ipcim"
+yes
+jelszo
+sudo bash
+apt update
+apt install apache2 -y
+
+PUTTY
+"ip" port: 22
+______________________________________________________________________________
+2025.03.13
+
+# vizsgaremeket fel kell majd tölteni a moodle-re (szerver, felhő, doku, txt  videó akinek kell) 
+# docker szervert kapunk utolsó órán (linux része a vizsgaremeknek), le kell dokumentálni és beilleszteni a szerverünkbe/hálózatunkba, HTTPS 
+______________________________________________________________________________
+1db fix IP cím kell a win 10-nek, a többihez tilos beállítani hogy ne fogyasszon. 
+Win 10 2CPU 4gb proci
+Linux 1CPU 1 gb RAM
+[smalldisk] Core 1CPU 2gb RAM
+!!DHCP-t tilos futtani felhőben!!
+
+mkdir /ceg
+chown -R www-data:aureadmin /ceg
+chmod -R 0570 /ceg
+ 
+cd /etc/apache2/sites-available/
+cp 000-default.conf ceg.conf
+nano ceg.conf
+ 
+ServerName ceg.suli.tl
+        ServerAlias ceg.suli.tl
+        ServerAdmin webmaster@localhost
+        DocumentRoot /ceg
+ 
+        <Directory /ceg>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+        </Directory>
+a2ensite ceg
+
+______________________________________________________________________________
+Azure:
+search -> virtual network (azure hálózata) -> create
+
+NETWORK
+Project details
+Subscription: Subscription 4
+Resource Group: Puhl-RG
+
+Instance details
+Virtual network name: vnet-pual
+Region: (Europe)North Europe
+
+Security
+semmit nem állítunk itt be
+
+IP address
+192.168.6.0/24
+ceruza -> alhálózat /28-as (lefotóztam)
+save -> next -> next -> create
+______________________________________________________________________________
+KLIENS
+Virtual Machine
+roject details
+Subscription: Subscription 4
+Resource Group: Puhl-RG
+
+Instance details
+Virtual network name: vmwin10-pual
+Region: (Europe)North Europe
+Zone 1-2-3
+Size: Standard_B1ms 1vcpu 2GiB memory
+Image: win 10 Pro version 22H2 x62 gen2
+
+Administartive account
+Username: azureclient
+Password: #Aa123456789@
+Portok: RDP (3389)
+
+Licensing: pipa
+
+OS disk size: image default 127GB
+SSD: Standard 
+Delete with VM: pipa
+
+Network
+Virtual network: vnet-pual
+Subnet: default (192.168.6.0/24)
+Public IP: (new) vmwin-pual-ip
+NIC network security group: Basic
+Public inbund ports: Allow
+Select inbund ports: RDP (3389)
+
+Management
+Enable auto-shutdown: pipa
+Notification before shutdown: nincs pipa
+
+Monitoring
+Boot diagnostics: Enable with managed storage account
+-> ->
+______________________________________________________________________________
+CORE
+Project details
+Subscription: Subscription 4
+Resource Group: Puhl-RG
+
+Instance details
+Virtual network name: vmwin2022-pual
+Region: (Europe)North Europe
+Zone 1-2-3
+Size: Standard_B1ms 1vcpu 2GiB memory
+Image: 
+
+Administartive account
+Username: azureadmin
+Password: #Aa123456789@
+Portok: RDP (3389)
+
+OS disk size: image default 30GB
+SSD: Standard 
+Delete with VM: pipa
+
+Network
+Virtual network: vnet-pual
+Subnet: default (192.168.6.0/24)
+Public IP: None
+NIC network security group: Basic
+Public inbund ports: Allow
+Select inbund ports: RDP (3389)
+
+NGS: nem kell
+
+Management
+Enable auto-shutdown: pipa
+Notification before shutdown: nincs pipa
+
+Monitoring
+Boot diagnostics: Enable with managed storage account
+-> ->
+
+Review + create
+______________________________________________________________________________
+LINUX
+Project details
+Subscription: Subscription 4
+Resource Group: Puhl-RG
+
+Instance details
+Virtual network name: vmlinux-pual
+Region: (Europe)North Europe
+Zone 1-2-3
+Size: Standard_B1s 1vcpu 1GiB memory
+Image: Debian 12 "Bookworm"
+
+Administartive account
+Username: azureadmin
+Password: #Aa123456789@
+Portok: RDP (3389)
+
+OS disk size: image default 30GB
+SSD: Standard 
+Delete with VM: pipa
+
+Network
+Virtual network: vnet-pual
+Subnet: default (192.168.6.0/24)
+Public IP: none
+NIC network security group: Basic
+Public inbund ports: Allow
+Select inbund ports: RDP (3389)
+
+NGS: nem kell
+
+Management
+Enable auto-shutdown: pipa
+Notification before shutdown: nincs pipa
+
+Monitoring
+Boot diagnostics: Enable with managed storage account
+-> ->
+
+Review + create
+______________________________________________________________________________
+Távoli asztallal belépünk a winclient-re public IP-vel
+a virtuális gépen belül távoli asztallal belépünk az azureadmin-ba 
+
+# Tartomány telepítése
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+
+# Tartomány felépítése
+Install-ADDSFOREST -DomainName suli.tl -DomainNetbiosName suli -Force -DomainMode  7 -ForestMode 7 -InstallDns 
+
+# DNS Forward beállítása
+Add-DnsServerForwarder -IPAddress 8.8.8.8
+
+windows keresőbe -> Add and optional features -> Add a feature -> RSAT, AD-Domain-Services, DNS servertools, GROUP policy, Server Manager, (DHCP!)
+
+CMD ipconfig /all
+
+Azure NETWORK DNS beállítása
+Custom: 192.168.13.5
+utána -> linux reboot és win10 restart 
+
+CMD ipconfig /all
+tartományba léptetés
+név: vmwin10-pual
+Domain: SULI.TL .......-> SULI.\azureadmin
+
+Manage -> add server -> find now -> kiválasztjuk a szervert -> add (ezután jelennek meg a szolgáltatások)
+
+jobb klikk -> ad us
+
+
+cmd-n keresztül linux-ba lépés -> ssh azureadmin@"192.168.13.6"
+sudo bash
+apt update
+
+
+ceg.conf
+blabbla
+
+server manager -> dns -> felvesszuk az AAA-t ceg neven es a linux ip-je kell 
+
+WINSCP telepítés -> kapcsolódni "linux IP" port: 22 azureadmin
+jobb oldal
+index.html felmásoljuk a ceg mappaba
+
+...................
+
+
+
+
+
+
+
+
+
+
+Linux webserver:
+mkdir /ceg
+chown -R www-data:azureadmin /ceg
+chmod -R 0570 /ceg
+ 
+cd /etc/apache2/sites-available/
+cp 000-default.conf ceg.conf
+nano ceg.conf
+______________________________________________________________________________
+ 2025.03.20
+ __________  
+|Azure CORE|
+|DOCKER	IIS|
+|__________|
+
+search/marketplace -> Web App
+ ____________  
+|Apache2     |
+|____________|
+Basic
+Name: webpualapache
+Publish: Container
+Operating system: Linux
+Region: North Europe
+Linux plan: (new)ASP
+Pricing plan: Basic B1
+
+Database -> semmit nem kell itt
+
+Container
+Image Source: Other container registries
+Image & tags: hello-world:linux (nem működik ez az image)
+-> -> -> -> create
+Default domain-re kell rá kattintani és megnyitni a weboldalt
+ __________  
+|NGNIX	   |
+|__________|
+Basic
+Name: webpualngnix
+Publish: Container
+Operating system: Linux
+Region: North Europe
+Linux plan: (létrehozott)ASP
+Pricing plan: Basic B1
+
+Container
+Image Source: Other container register
+Image & tags: ngnix:latest
+
+(webpualapache -> deployment center -> Full image -> httpd:2.4 vagy ubuntu/apache2 )
+
+
