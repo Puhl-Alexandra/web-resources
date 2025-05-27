@@ -1,0 +1,293 @@
+mikrotik
+alap
+
+ip f n add ch=dstnat ac=dst-nat in-interface=ether3 dst-p=50000 to-a=172.16.0.254 to-p=3389 pro=tcp
+ip f n add ch=dstnat ac=dst-nat in-interface=ether3 dst-p=55000 to-a=172.16.0.253 to-p=3389 pro=tcp
+ip f n add ch=dstnat ac=dst-nat in-interface=ether3 dst-p=60000 to-a=172.16.0.252 to-p=3389 pro=tcp
+
+ssh kapcsolás Windowssal
+
+ip f n add ch=dstnat ac=dst-nat in-interface=ether3 dst-p=2222 to-a=172.16.0.254 to-p=22 pro=tcp
+ip f n add ch=dstnat ac=dst-nat in-interface=ether3 dst-p=2223 to-a=172.16.0.253 to-p=22 pro=tcp
+ip f n add ch=dstnat ac=dst-nat in-interface=ether3 dst-p=2224 to-a=172.16.0.252 to-p=22 pro=tcp
+
+winbe
+
+Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service -Name "sshd"
+Set-Service -Name "sshd" -StartupType Automatic
+Get-Service -Name "sshd" | Select-Object *
+New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol Tcp -Action Allow -LocalPort 22
+
+Winservercore
+
+#Aa123456789@
+
+2 -> név
+7 -> remote: e, 1
+8 -> 1, 1, s, beállítás, 8 -> 1, 2, (pdc:8.8.8.8)(bdc:pdc IP,8.8.8.8)
+
+d:
+.\VBoxWindowsAdditions.exe
+reboot
+
+PDC
+
+Install-WindowsFeature AD-domain-services -IncludeManagementTools -Verbose
+
+Install-ADDSForest -DomainName xycompanxy.xy -ForestMode Win2012R2 -DomainMode Win2012R2 -DomainNetbiosName XYCOMPANY -InstallDns:$true
+
+#Aa123456789@
+
+Y
+
+Install-WindowsFeature DHCP -IncludeManagementTools -Verbose
+
+Add-DhcpServerv4Scope -Name xycompany_scope -StartRange 172.16.0.100 -EndRange 172.16.0.150 -SubnetMask 255.255.0.0
+
+Set-DhcpServerv4OptionValue -DnsDomain xycompany.xy -DnsServer 172.16.0.254, 172.16.0.253 -Router 172.16.0.1 -Force
+
+Add-DhcpServerInDC -DnsName winserverpdc.xycompany.xy
+Get-DhcpServerv4Scope | Select-Object -Property *
+
+Restart-Service DHCPServer
+
+BDC
+
+Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools -Verbose
+
+Install-ADDSDomainController -InstallDns -Credential (Get-Credential xycompany\Administrator) -DomainName xycompany.xy -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "#Aa123456789@" -Force)
+
+#Aa123456789@
+
+Y
+
+Install-WindowsFeature DHCP -IncludeManagementTools -Verbose
+
+Set-DhcpServerv4OptionValue -DnsDomain xycompany.xy -DnsServer 172.16.0.254, 172.16.0.253 -Router 172.16.0.1
+
+Add-DhcpServerInDC -DnsName winserverbdc.xycompany.xy
+
+PDC+BDC
+
+W32tm /config /manualpeerlist:"0.hu.pool.ntp.org 1.hu.pool.ntp.org 2.hu.pool.ntp.org 3.hu.pool.ntp.org" /syncfromflags:manual /reliable:yes /update
+Set-TimeZone -Name "Central Europe Standard Time"
+W32tm /resync /force
+Get-TimeZone
+
+PDC
+
+Add-DhcpServerv4Failover -ComputerName "winserverpdc.xycompany.xy" -PartnerServer "winserverbdc.xycompany.xy" -Name "winserverpdc-winserverbdc-hot_standby" -ServerRole Active -ReservePercent 10 -MaxClientLeadTime 1:00:00 -StateSwitchInterval 00:45:00 -ScopeId 172.16.0.0 -SharedSecret "#Aa123456789@"
+
+Y
+
+BDC
+
+Set-DnsServerForwarder -IPAddress 8.8.8.8
+
+Get-DhcpServerv4Scope | Select-Object -Property *
+
+Restart-Service DHCPServer
+
+Elsőnek bdc -> pdc
+
+shutdown -r
+
+WINC
+
+Add an optional feature: RSAT: mindengyik (21)
+
+Server Manager
+
+Add Servers -> DNS -> 172.16.0.254, 172.16.0.253 -> dhcp active
+
+S M -> PDC
+
+DNS
+
+Reverse Lookup Zones 172.16.0
+PTR
+
+172.16.0.254
+winserverpdc.xycompany.xy
+
+172.16.0.253
+winserverbdc.xycompany.xy
+
+172.16.0.252
+winserverweb.xycompany.xy
+
+Forward Lookup Zones
+
+New Host
+
+Name:
+IP address 172.16.0.252
+
+Name: www
+IP address 172.16.0.252
+
+Name: ftp
+IP address 172.16.0.252
+
+Domain user add
+programmers -> William Johnson | william_j -> #Cc123456@
+ftp_users -> ftpuser -> #Dd123456@
+
+Tesztelés
+
+Újra indít és másik felhasználó BDC által
+
+WINSWEB
+
+#Aa123456789@
+
+172.16.0.252
+255.255.0.0
+172.16.0.1
+172.16.0.254
+172.16.0.253
+
+winserverweb
+RAID: 4 20GB meghajtó hozzá adás
+
+W32tm /config /manualpeerlist:"0.hu.pool.ntp.org 1.hu.pool.ntp.org 2.hu.pool.ntp.org 3.hu.pool.ntp.org" /syncfromflags:manual /reliable:yes /update
+Set-TimeZone -Name "Central Europe Standard Time"
+W32tm /resync /force
+Get-TimeZone
+
+Server Manager
+File and Storage Service
+Volumes
+C: RMB -> Properties -> label: winserverweb
+D: RMB -> Format -> label: shares
+
+
+Add R and F
+Server Roles:
+-File and Storage Services -> File Server Resource Manager
+-Print and Document Services
+-Web Server (IIS)
+Print and Document Services -> Print Server
+Web Server (IIS) -> HTTP Redirection, FTP Server
+
+Add R and F
+Server Roles:
+-Active Directory Certificate Services
+AD CS -> Certification Authority, Certification Authority Web Enrollment
+
+xycompany\administrator bejelentkezni
+
+AD CS Configuration:
+credentials: XYCOMPANY\administrator
+első-kettő
+Setup Type: Enterprise CA
+CA Type: Root CA
+Private Key -> Create a new private key
+Configure
+
+Shortcut:
+%windir%\System32\mmc.exe
+
+certificates -> Computer account -> Local computer
+Save As -> certificates
+
+Certification °|° Personal RMB -> All Task > Advanced Operations > Create Custom Request
+next > Active Directory Enrollment Policy, next> Template: Web Server 
+, next > Details > Propeties > Private Key: Key options, Make private key exportable, Apply > Extensions: Extended Key Usage (application policies), Private key Archival >< Add, Apply > Subject: Subject name: Type: Full DN, VAlue: (CN=www.xycompany.xy O=XYCOMPANY OU=IT L=BUDAPEST S=PEST C=HU); Alternative name: Type: DNS, Value: (DNS xycompany.xy www.xycompany.xy ftp.xycompany.xy); Alternative name: Type: IP address (v4) (172.16.0.252), Apply > General: Friendly name: ftp_web_tls_ssl_certificate, Apply,OK > next > C:\User\administrator.XYCOMPANY\Documents\ftp_web_tls_ssl_certificate, FINISH HIM?
+
+Certificate megnyitása C:\User\administrator.XYCOMPANY\Documents\ftp_web_tls_ssl_certificate és másolása
+
+Oldal megnyitás
+localhost/certsrv/Default.asp -> Request a certificate -> advanced certificate request -> Beillesztés a Base-64 részbe, Certificate Template: Web Server, Submit -> DER encoded, Download certificate > KEEP or Internet Information Services (IIS) Manager -> WINSERVERWEB Server Certificates LMB -> Complete Certificate Request -> C:\User\administrator.XYCOMPANY\Download\certnew.cer, ftp_web_tls_ssl_certificate, Web Hosting, OK
+
+File
+
+This PC -> Search: C:\inetpub > készíts új mappát xycompany -> Internet Information Services (IIS) Manager > Sites RMB> Add FTP Site -> ftp.xycompany.xy, C:\inetpub\xycompany -> All Unassigned, 21, tick Start FTP., Allow SSL, ftp_web_tls_ssl_certificate -> Basic, Specified roles or user groups, ftp_users, tick Read and Write
+
+Services -> Microsoft FTP Service RMB > All Tasks > Restart
+
+Internet Information Services (IIS) Manager > Sites > ftp.xyompany.xy RMB > Edit Permissions... -> Security > Edit -> Add -> locations: WINSERVERWEB, WINSERVERWEB\IIS_IUSRS > tick write, OK -> Edit -> Add > location: xycompany.xy, ftpuser > tick modify OK -> Edit -> Add > location: xycompany.xy, IUSR > tick Full control OK
+
+File Explorer > view > File name extensions
+
+Winclient
+
+New > Text Dockument > index.html > <center><h1>Welcometo XYCOMPANY website!</h1></center>
+
+SCP winclient:
+CMD -> netsh adfirewall set global StatefulFTP disable
+
+https://winscp.net/eng/download.php
+
+SCP login: File pro.: FTP, Encryption: TLS/SSL Explicit encryption, host name: ftp.xycompany.xy, 21, user name: ftpuser, password: #Dd123456789@ -> OK
+
+domain mappába belépni ide feltölteni a index.html fájlt
+
+Winserverweb
+
+Internet Information Services (IIS) Manager > Sites > Default Web Site RMB > Manage Website > Stop -> Sites RMB > Add website... > Site name: www.xycompany.xy, Physical path: C:\inetpub\xycompany > OK > yes -> www.xycompany.xy ->- Edit Site - Blindings… LMB > Add >Type: https, SSL certificate: ftp_web_tsl_ssl_certificate, OK > close
+
+https://www.iis.net/downloads/microsoft/url-rewrite > English link x64 installer
+
+Internet Information Services (IIS) Manager > Sites > www.xycompany.xy > URL Rewrite LMB > Add Rule(s) > Blank rule > Name: redirect_www_to_non_www_http_to_https,Match URL: Pattern: (.*), Conditions: Input {HTTP_HOST} Type Matches the Pattern Pattern ^(www\.)(.*)$ Add > Action: Action Type: Redirect, Redirect URL: https://{C:2} {Request_URI}, Redirect type: Permanent (301) -> Apply -> WINSERVERWEB (XYCOMPANY\administrator) ->- Restart
+
+__
+Winserverweb
+
+File > D: > mappa készítések xycompany > common_folder, finance_department, managing_director > michael_s <, marketing_department, personnel_department, programmers > william_j <, secretariat, install$
+
+__
+Server Manager > File And Storage Servces > Shares > in folder place RMB > New Share -> SMB Shares - Quick > pointed Type a custom path: Browse… -> shares (D:) > xycompany > managig_director > michael_s > Select folder -> next > Share name: michael_smith > next > tick every exept Enable BranchCache on the file share > next > Customize permissions -> click disable inheritance > Convert … > Permissions > Administrators: full, Domain Admins: full, Michael Smith: modify <: ADD > Share > Domain Admins: full, Michael Smith: change <: ADD > OK -> next > Create > close 
+
+->  pointed Type a custom path: Browse… -> shares (D:) > xycompany > common_folder > Select folder -> next > Share name: common_folder > next > tick every exept Enable BranchCache on the file share > next > Customize permissions -> click disable inheritance > Convert … > Permissions > Administrators: full, Domain Admins: full, Domain users: modify <: ADD > Share > Domain Admins: full, Domain users: change <: ADD > OK -> next > Create > close
+ 
+-> in folder place RMB > New Share -> SMB Shares - Quick > pointed Type a custom path: Browse… -> shares (D:) > xycompany > install$ > Select folder -> next > Share name: install > next > tick every exept Enable BranchCache on the file share > next > Customize permissions -> click disable inheritance > Convert … > Permissions > Administrators: full, Domain Admins: full, Domain Users: modify <: ADD > Share > Domain Admins: full, Domain users: read <: ADD > OK -> next > Create > close
+
+__
+Server Manager > tools > File Server Resource Manager -> Quota Management > Quotas ->- Create Quota -> Quota path: D:\xycompany\managing_derectory\michael_s, Derive properties from this quota template: 2 GB limit, create > Quota path: D:\xycompany\common_folder, Derive properties from this quota template: 5 GB limit, create
+
+winclient
+
+Active Directory Users and Computers> xycompany > managing_director > Michael Smith RMB > propertise -> Profile > Connect: Z:, To: \\winserverweb\michael_smith > OK > programmers > William Johnson Profile > Connect: Z:, To: \\winserverweb\ william_johnson
+
+Group Policy Management > "domain" > xycompany RMB > Creat -> name: common_folder, ok > common_folder RMB > Edit -> User config. > Preferences > Win > Drive Maps >- New > Mapped Drive -> Action: Update, Location: \\winserverweb\common_folder, tick Reconnect, pointed User X, OK 
+
+CMD PDC
+
+gpupdate/force
+
+winserverweb
+
+tools > Print Management > Print Server > winserverweb > Drivers RMB > Add Driver... -> next > middle, next > generic / Text Only > next > finish -> Printers RMB > Add Printer... -> Add a new printer using an existing port: LPT1: (Printer Port), next > next > next > next > finish
+
+Printers & scanners > refresh after this > The printer that I want isn't listed -> Select a shared printer by name > \\winserverweb\Generic / Text Only, next > next > Finish -> Generic / Text Only on winserverweb
+
+winclient
+
+EDGE setting download setting where download
+
+firefox msi download
+
+MSI for Firefox
+
+latest GreatB
+
+\\winserverweb\install$
+
+select mappa
+
+Group policy management
+
+xycompany > managing_derector RMB > Creat -> managing_director -> edit -> User policies > software settings > software installing RMB > new > packed > \\winserverweb\install$ > file chosse > advanced -> file RMB > properties > Deployment > Assigned
+
+CMD PDC
+
+gpupdate/force
+
+winserverweb
+
+add roles and feature > Feature > Windows server backup > Install
+
+start RMB > disk management > GPP > első plus lemez RMB > New RAID-5 > a többi lemez hozzá adás > f disk > sima formázás

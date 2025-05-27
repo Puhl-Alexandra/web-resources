@@ -1,0 +1,449 @@
+MikroTik:
+int/print
+ip/dhcp-client/add disabled=no interface=ether1
+ip/address/add interface=ether2 address=172.16.0.1/16
+ip/dhcp-client/add disabled=no interface=ether3
+ip/address/print
+ip/firewall/nat/add chain=srcnat action=masquerade out-interface=ether1
+ip/firewall/nat/add chain=dstnat action=dst-nat in-interface=ether3 dst-port=50000 to-address=172.16.0.254 to-ports=3389 protocol=tcp
+ip/firewall/nat/print
+system/reboot
+system/shutdown
+
+
+WinServer:
+W32tm /config /manualpeerlist:"0.hu.pool.ntp.org 1.hu.pool.ntp.org 2.hu.pool.ntp.org 3.hu.pool.ntp.org" /syncfromflags:manual /reliable:yes /update
+Set-TimeZone -Name "Central Europe Standard Time"
+W32tm /resync /force
+Get-TimeZone 
+_______________________________________________________________________________________________
+Linux Szerver:
+
+iface enp0s3 inet static
+
+address 172.16.0.254
+netmask 255.255.0.0
+network 172.16.0.0
+broadcast 172.16.255.255
+gateway 172.16.0.1
+dns-nameserver 172.16.0.254 8.8.8.8
+dns-search xycompany.xy
+
+
+Guest Additions:
+apt install build-essential dkms linux-headers-$(uname -r) -y 
+"insert guest additions"
+mkdir /mnt/cdrom
+mount /dev/cdrom /mnt/cdrom
+cd /mnt/cdrom
+sh ./VBoxLinuxAdditions.run --nox11
+systemctl reboot
+
+fdisk -l
+fdisk /dev/sdb
+
+mkfs.ext4 /dev/sdb1
+e2label /dev/sdb1 user_folders
+mkfs.ext4 /dev/sdb2
+e2label /dev/sdb2 common_folder
+
+mkdir /mnt/sdb1
+mount /dev/sdb1 /mnt/sdb1
+
+mkdir /mnt/sdb2
+mount /dev/sdb2 /mnt/sdb2
+
+nano /etc/fstab
+user_xattr,acl,errors=remount-ro	0	1
+/dev/sdb1 /mnt/sdb1 ext4 user_xattr,acl,errors=remount-ro,usrquota 0 1
+/dev/sdb2 /mnt/sdb2 ext4 user_xattr,acl,errors=remount-ro,usrquota 0 1
+systemctl reboot
+
+nano /etc/resolv.conf
+domain xycompany.xy
+search xycompany.xy
+nameserver 172.16.0.254
+nameserver 172.16.0.253
+
+apt install samba samba-vfs-modules winbind libpam-winbind libnss-winbind krb5-config -y 
+mv /etc/samba/smb.conf /etc/samba/smb.conf.orig
+nano /etc/samba/smb.conf
+
+[global]
+
+workgroup = XYCOMPANY
+password server = winserverpdc.xycompany.xy winserverbdc.xycompany.xy
+realm = XYCOMPANY.XY
+security =ads
+idmap config * : range = 16777216-33554431
+template homedir = /home/%U
+template shell = bin/bash
+winbind use default domain = true
+winbind offline logon = false
+vfs objects = acl_xattr
+map acl inherit = yes
+store dos attributes = yes
+
+nano /etc/nsswitch.conf
+
+nano /etc/pam.d/common-session
+session optional	pam_mkhomedir.so skel=/etc/skel unmask=0077
+
+timedatectl set-timezone Europe/Budapest
+net ads join -U Administrator 
+systemctl restart winbind
+systemctl reboot
+
+net rpc rights grant "XYCOMPANY\Domain Admins" SeDiskOperatorPrivilege -U "XYCOMPANY\administrator"
+
+net rpc rights list privileges SeDiskOperatorPrivilege -U "XYCOMPANY\administrator"
+
+wbinfo -u 
+wbinfo -g
+
+apt install apache2 -y
+
+apt install ufw -y 
+
+nano /etc/ufw/applications.d/apache2-utils.ufw.profile
+
+[Apache]
+title=Web Server
+description=Apache v2 is the next generation of the omnipresent Apache web server.
+ports=80/tcp
+
+[Apache Secure]
+title=Web Server (HTTPS)
+description=Apache v2 is the next generation of the omnipresent Apache web server.
+ports=443/tcp
+
+[Apache Full]
+title=Web Server (HTTP,HTTPS)
+description=Apache v2 is the next generation of the omnipresent Apache web server.
+ports=80,443/tcp
+
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow in 'Apache Full'
+ufw allow in 'OpenSSH'
+ufw allow in 'Samba'
+ufw allow 20,21,990/tcp
+ufw enable -y
+ufw status verbose
+
+cd ~/
+CANAME=XYCOMPANY-RootCA
+openssl genrsa -aes256 -out $CANAME.key 2048
+(jelszó: #P@$$WD12345@)
+
+openssl req -x509 -new -nodes -key $CANAME.key -sha256 -days 1826 -out $CANAME.crt
+HU
+Pest
+Budapest
+XYCOMPANY
+IT
+XYCOMPANY-RootCA
+
+cd /mnt/sdb1/
+mkdir certificates$/
+chown root:"Domain Admins" certificates$/
+chmod 0770 certificates$/
+
+nano /etc/samba/smb.conf
+
+[certificates$]
+comment = certificates
+path = /mnt/sdb1/certificates$/
+read only = no
+
+smbcontrol all reload-config
+
+cp ~/XYCOMPANY-RootCA.crt /mnt/sdb1/certificates\$/
+
+cd ~/
+WEBCERT=linuxserverweb
+openssl req -new -nodes -out $WEBCERT.csr -newkey rsa:2048 -keyout $WEBCERT.key
+HU
+Pest
+Budapest
+XYCOMPANY
+IT
+www.xycompany.xy
+
+WEBCERT=linuxserverweb
+nano $WEBCERT.v3.ext 
+
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = xycompany.xy
+DNS.2 = www.xycompany.xy
+IP.1 = 172.16.0.252
+
+CANAME=XYCOMPANY-RootCA
+openssl x509 -req -in $WEBCERT.csr -CA $CANAME.crt -CAkey $CANAME.key -CAcreateserial -out $WEBCERT.crt -days 730 -sha256 -extfile $WEBCERT.v3.ext
+(jelszó: #P@$$WD12345@)
+
+cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.orig		
+
+rm /etc/apache2/sites-available/000-default.conf
+
+nano /etc/apache2/sites-available/000-default.conf 
+
+<Directory /var/www/xycompany>
+	Options Indexes FollowSymLinks
+	Require all granted
+	AllowOverride All
+</Directory>
+
+<VirtualHost *:80>
+	ServerName linuxserverweb.xycompany.xy
+	ServerAlias xycompany.xy
+	DocumentRoot /var/www/xycompany/
+#	ErrorLog ${APACHE_LOG_DIR}/error.log
+#	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+	ServerName linuxserverweb.xycompany.xy
+	ServerAlias xycompany.xy
+	DocumentRoot /var/www/xycompany/
+#	ErrorLog /var/www/html/htdocs/logs/error.log
+#	CustomLog /var/www/html/htdocs/logs/access.log combined
+	SSLEngine on
+	SSLCertificateFile		/root/linuxserverweb.crt
+	SSLCertificateKeyFile		/root/linuxserverweb.key
+	
+<FilesMatch "\.(cgi|shtml|phtml|php)$">
+	SSLOptions +StdEnvVars
+</FilesMatch>
+
+<Directory /usr/lib/cgi-bin>
+	SSLOptions +StdEnvVars
+</Directory>
+
+	BrowserMatch "MSIE [2-6]"\
+	nokeepalive ssl-unclean-shutdown \
+	downgrade-1.0 force-response-1.0
+</VirtualHost>
+
+<center><h1>Welcome to XYCOMPANY website!</h1></center>
+
+mkdir /var/www/xycompany
+chmod -R 755 /var/www/xycompany
+
+addgroup sftponly
+adduser sftpuser
+(jelszó: #Dd123456789@)
+
+usermod -d /var/www sftpuser
+usermod -aG sftponly sftpuser
+usermod -aG www-data sftpuser
+chown -R sftpuser:www-data /var/www/xycompany
+
+nano /etc/ssh/sshd_config
+
+
+Subsystem sftp internal-sftp
+
+Match Group sftponly
+ChrootDirectory /var/www/
+ForceCommand internal-sftp
+AllowTcpForwarding no
+X11Forwarding no
+
+systemctl restart ssh
+
+nano /var/www/xycompany/.htaccess
+
+RewriteEngine On
+RewriteCond %{HTTP_HOST} !^pa0312\.akk$
+RewriteRule ^(.*) https://pa0312.akk/$1 [L,R=301]
+
+a2enmod ssl
+a2enmod headers
+a2enmod rewrite
+apache2ctl configtest
+systemctl reload apache2
+
+https://www.company.xy
+
+
+cd /mnt/sdb1/
+mkdir shares/
+chmod 0770 shares/
+cd /mnt/sdb2/
+mkdir common_folder
+chown root:"Domain Admins" common_folder/
+chmod 0770 common_folder/
+
+apt install quota -y
+apt install quotatool
+
+mount -o remount /dev/sdb1/
+mount -o remount /dev/sdb2/
+
+quotacheck -ugm /dev/sdb1
+quotacheck -ugm /dev/sdb2
+
+quotaon /dev/sdb1
+quotaon /dev/sdb2
+
+quotatool -u michael_s -b -q 500M /dev/sdb1
+quotatool -u william_j -b -q 500M /dev/sdb1
+quotatool -g "domain users" -b -q 1G /dev/sdb2
+
+nano /etc/samba/smb.conf
+
+[shares]
+comment = shares
+path = /mnt/sdb1/shares/
+read only = no
+
+[common folder]
+comment = common_folder
+path = /mnt/sdb2/common_folder
+read only = no
+
+smbcontrol all reload-config
+______________________________________________________________________________
+5.telepítési segédlet
+ _______ 
+|PDC	|
+|_______|
+SConfig:
+#Aa123456789@
+2 (computer name)
+winserverpdc
+n (restart?nem)
+7 (remote desktop)
+e (enable)
+1
+ENTER
+8 (network settings)
+1
+1
+s (static)
+172.16.0.254
+255.255.0.0
+172.16.0.1
+ENTER
+8
+1
+2
+8.8.8.8
+ENTER
+15
+"Insert Guest Additions"
+d:
+.\VBoxWindowsAdditions.exe
+
+!Távoli asztal kapcsolattal csatlakozunk/PUTTY-val SSH-n keresztül!
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+Get-WindowsCapability -Online | ? Name -like 'OpenSSH*'
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service -Name "sshd"
+Set-Service -Name "sshd" -StartupType Automatic
+Get-Service -Name "sshd" | Select-Object *
+New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol Tcp -Action Allow -LocalPort 22
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+Install-WindowsFeature AD-domain-services -IncludeManagementTools -Verbose
+Install-ADDSForest -DomainName xycompany.xy -ForestMode Win2012R2 -DomainMode Win2012R2 -DomainNetbiosName XYCOMPANY -InstallDns:$true
+#Aa123456789@
+Y
+
+Install-WindowsFeature DHCP -IncludeManagementTools -Verbose
+Add-DhcpServerv4Scope -Name xycompany_scope -StartRange 172.16.0.100 -EndRange 172.16.0.150 -SubnetMask 255.255.0.0
+Set-DhcpServerv4Option Value -DnsDomain xycompany.xy -DnsServer 172.16.0.254, 172.16.0.253 -Router 172.16.0.1 -Force
+Add-DhcpServerInDC -DnsName winserverpdc.xycompany.xy
+Get-DhcpServerv4Scope | Select-Object -Property *
+Restart-Service DHCPServer
+ _______ 
+|BDC	|
+|_______|
+SConfig:
+#Aa123456789@
+2 (computer name)
+winserverbdc
+n (restart?nem)
+7 (remote desktop)
+e (enable)
+1
+ENTER
+8 (network settings)
+1
+1
+s (static)
+172.16.0.253
+255.255.0.0
+172.16.0.1
+ENTER
+8
+1
+2
+172.16.0.254
+ENTER
+15
+"Insert Guest Additions"
+d:
+.\VBoxWindowsAdditions.exe
+
+!Távoli asztal kapcsolattal csatlakozunk/PUTTY-val SSH-n keresztül!
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
+
+Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools -Verbose
+Install-ADDSDomainController -InstallDns -Credential (Get-Credential xycompany\Administrator) -DomainName xycompany.xy -SafeModeAdministratorPassword (ConvertTo-SecureString -AsPlainText "#Aa123456789@" -Force)
+#Aa123456789@
+Y
+
+Install-WindowsFeature DHCP -IncludeManagementTools -Verbose
+Set-DhcpServerv4Option Value -DnsDomain xycompany.xy -DnsServer 172.16.0.254, 172.16.0.253 -Router 172.16.0.1
+Add-DhcpServerInDC -DnsName winserverbdc.xycompany.xy
+
+Add-DhcpServerv4Failover -ComputerName "winserverpdc.xycompany.xy" -PartnerServer "winserverbdc.xycompany.xy" -Name "winserverpdc-winserverbdc-hot_standby" -ServerRole Active -ReservePercent 10 -MaxClientLeadTime 1:00:00 -StateSwitchInterval 00:45:00 -ScopeId 172.16.0.0 -SharedSecret "#Aa123456789@"
+Y
+Set-DnsServerForwarder -IP Address 8.8.8.8
+Get-DhcpServerv4Scope | Selected-Object -Property *
+Restart-Service DHCPServer
+shutdown -r (Előbb a bdc-t kell újraindítani utána a pdc-t)
+ _______ 
+|KLIENS	|
+|_______|
+winclient
+
+<center><h1>Welcome to XYCOMPANY website!</h1></center>
+
+CMD-be:
+netsh advfirewall set global StatefulFTP disable
+
+https://winscp.net/eng/download.php
+
+https://www.iis.net/downloads/microsoft/url-rewrite -> English x64 installer
+
+https://www.xycompany.xy
+
+PDC PowerShell -> gpupdate /force
+
+-----------------------------------------------------------------------------
+web szerver biztonsagi mentessel
++4db 20GB-s meghajto "raid5_backup_01"
+
+_____________________________________________________________________________
+permissions -> domain users minden 
+share -> domain users read, domain admins full control
+xycompany szervezeti egyseg ala hozzuk letre a common_foldert -> edit 
+
+AUTOMATIKUS SZOFTVERTELEPÍTÉS A KLIENS GÉPEKRE:
+
+edge kereső -> firefox msi download (frontmotion oldalon töltjük le) edge beállitások download kerdezzen ra hova töltsön le?
+download firefox 117.0.1-en-GB this pc \\winserverweb\install$ ide mentjük le a firefoxot
+server manager -> group policy management -> xycompany (ha mindenkinek akarjuk)-> (managing director) -> jobb klikk -> create GPO -> managing director -> user configuration -> policies -> software settings -> software installation -> jobb klikk -> new package -> cimsorba ->  \\winserverweb\install$ -> enter és ott lesz a program -> kivalasztjuk -> deploy software -> advanced -> ok -> deployment -> assigned -> install this application at logon -> ok -> pdc-n cmdbe gpupdate/force -> klienst ujrainditjuk 2-3x ha nem menne fel elsőre 
+
+BIZTONSAGI MENTES A BDC SZERVERRE:
+
+manage -> add roles -> windows server backup -> install -> windows jel -> jobb klikk -> disk management -> uj particio sema (GPT) -> 1. disk -> jobb klikk -> uj raid volume -> next -> mindent atrakunk -> f disk -> sima formazast valasztjuk ki ami sokaig tart (ehhez kell a +4db 20GB-s meghajto ezeket osszevonva csinaljuk meg a raid-et)
+
+tools -> windows server backup -> local backup (!!!) -> schedule (ütemezett mentés) -> next -> (full server) / custom ez kell most nekunk -> next -> add items -> shares meghajton az xycompany + osszes felhasznalot kivalasztjuk -> ok -> once a day pl 21:00 (ajanlott amikor kevesen vannak a halozaton) -> ((back up to a hard disk that is dedicated for backups)) / back up to a volume -> next -> add -> raid5_backup -> next -> finish
