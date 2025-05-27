@@ -1,0 +1,915 @@
+S2 (Irodaswitch2)
+
+en
+conf t
+ho S2
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+
+vtp m c
+vtp d PUFF.KFT
+vtp pass PUFFi
+int fa0/10
+sw mo ac
+sw ac v 10
+int fa0/11
+sw mo ac
+sw ac v 20
+int fa0/12
+sw mo ac
+sw ac v 30
+int fa0/13
+sw mo ac
+sw ac v 40
+exit
+int ra fa0/1 -2
+sw mo tr
+int ra g0/2
+sw mo tr
+int ra f0/23 -24
+sw mo ac
+sw ac v 99
+int ra fa0/10-13
+sw po
+sw po mac s
+sw po max 1
+sw po vi re
+exit
+
+S3 (Irodaswitch3)
+
+en
+conf t
+ho S3
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+
+vtp m c
+vtp d PUFF.KFT
+vtp pass PUFFi
+int fa0/10
+sw mo ac
+sw ac v 10
+int fa0/11
+sw mo ac
+sw ac v 20
+int fa0/12
+sw mo ac
+sw ac v 30
+int fa0/13
+sw mo ac
+sw ac v 40
+exit
+int ra fa0/1 -2
+sw mo tr
+int ra g0/1
+sw mo tr
+int f0/24
+sw mo ac
+sw ac v 99
+int ra fa0/10-13
+sw po
+sw po mac s
+sw po max 1
+sw po vi re
+exit
+
+S4 (Irodaswitch4)
+
+en
+conf t
+ho S4
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+
+vtp m c
+vtp d PUFF.KFT
+vtp pass PUFFi
+int fa0/10
+sw mo ac
+sw ac v 10
+int fa0/11
+sw mo ac
+sw ac v 20
+int fa0/12
+sw mo ac
+sw ac v 30
+int fa0/13
+sw mo ac
+sw ac v 40
+exit
+int ra fa0/1 -2
+sw mo tr
+int ra fa0/10-13
+sw po
+sw po mac s
+sw po max 1
+sw po vi re
+exit
+
+S5 (Irodaswitch5)
+
+en
+conf t
+ho S5
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+
+vtp m c
+vtp d PUFF.KFT
+vtp pass PUFFi
+int fa0/10
+sw mo ac
+sw ac v 10
+int fa0/11
+sw mo ac
+sw ac v 20
+int fa0/12
+sw mo ac
+sw ac v 30
+int fa0/13
+sw mo ac
+sw ac v 40
+exit
+int ra fa0/1 -2
+sw mo tr
+int ra fa0/10-13
+sw po
+sw po mac s
+sw po max 1
+sw po vi re
+exit
+
+S1 (Irodaswitch1)
+
+en
+conf t
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+
+ho S1
+vtp m s
+vtp d PUFF.KFT
+vtp pass PUFFi
+vtp v 2
+vlan 10
+vlan 20
+vlan 30
+vlan 40
+vlan 99
+exit
+spanning-tree vlan 1 root primary
+spanning-tree vlan 10 root primary
+spanning-tree vlan 20 root primary
+spanning-tree vlan 30 root primary
+spanning-tree vlan 40 root primary
+spanning-tree vlan 99 root primary
+int ra fa0/1 -2
+sw mo tr
+int ra g0/1
+sw mo tr
+exit
+
+DHCP (Winserver)(192.168.2.130:255.255.255.248:192.168.2.129;FC99::2,alap,FE80::99)
+[192.168.2.1,255.255.255.224,192.168.2.2-30;192.168.2.33,255.255.255.224,192.168.2.34-62;192.168.2.65,255.255.255.224,192.168.2.66-94;192.168.2.97,255.255.255.224,192.168.2.98-126;192.168.2.129,255.255.255.248,192.168.2.131-134]DNS 192.168.2.130
+WIFI router (DHCP(V99),192.168.3.1:255.255.255.224:192.168.3.2-30;Puff_kft,disable;WPA2 P.,TKIP,Puffancs)
+
+R4,1 (Irodarouter1)
+
+en
+conf t
+ho R4
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int s0/0/0
+ip add 10.10.10.14 255.255.255.252
+no sh
+int s0/0/1
+ip add 10.10.10.18 255.255.255.252
+no sh
+int g0/1
+ip add 10.10.10.21 255.255.255.252
+no sh
+int g0/2
+ip add 10.10.10.25 255.255.255.252
+no sh
+ex
+router os 1
+ro 1.1.1.4
+netw 10.10.10.12 0.0.0.3 a 0
+netw 10.10.10.16 0.0.0.3 a 0
+netw 10.10.10.20 0.0.0.3 a 0
+netw 10.10.10.24 0.0.0.3 a 0
+au
+ex
+ip route 0.0.0.0 0.0.0.0 10.10.10.17
+ip route 0.0.0.0 0.0.0.0 10.10.10.13
+
+R4,2 (Irodarouter2)
+
+en
+conf t
+ho R4
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int g0/1
+ip add 10.10.10.22 255.255.255.252
+ip nat ou
+no sh
+int g0/2
+ip add 192.168.2.137 255.255.255.252
+ip nat in
+no sh
+ex
+router os 1
+ro 1.1.2.4
+netw 192.168.2.136 0.0.0.3 a 1
+netw 10.10.10.20 0.0.0.3 a 0
+def o
+au
+ex
+ip route 192.168.2.0 255.255.255.0 192.168.2.138
+____________________________________________________
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+
+cry is key KULCS2 add 10.10.10.17 
+cry ip tra R2TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN2
+per ip 192.168.2.0 0.0.0.255 192.168.0.0 0.0.0.7
+ex
+cry map R2CMAP 1 ipsec
+set peer 10.10.10.17
+set tran R2TSET
+Match add VPN2
+ex
+int g0/1
+cry map R2CMAP
+ex
+ip acc ex 101
+deny ip 192.168.2.0 0.0.0.255 192.168.0.0 0.0.0.7
+per ip 192.168.2.0 0.0.0.255 a
+ex
+ip nat in s l 101 i g0/1 o
+ip route 10.10.10.17 255.255.255.255 10.10.10.21
+ip route 192.168.0.0 255.255.255.248 10.10.10.21
+ip route 0.0.0.0 0.0.0.0 10.10.10.21
+
+
+R4,3 (Irodarouter3)
+
+en
+conf t
+ho R4
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int g0/1
+ip add 192.168.2.141 255.255.255.252
+ip nat in
+no sh
+int g0/2
+ip add 10.10.10.26 255.255.255.252
+ip nat ou
+no sh
+ex
+router os 1
+ro 1.1.3.4
+netw 192.168.2.140 0.0.0.3 a 1
+netw 10.10.10.24 0.0.0.3 a 0
+def o
+au
+ex
+ip route 192.168.2.0 255.255.255.0 192.168.2.142
+____________________________________________________
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+
+cry is key KULCS3 add 10.10.10.13 
+cry ip tra R3TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN3
+per ip 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.7
+ex
+cry map R3CMAP 1 ipsec
+set peer 10.10.10.13
+set tran R3TSET
+Match add VPN3
+ex
+int g0/2
+cry map R3CMAP
+ex
+ip acc ex 101
+deny ip 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.7
+per ip 192.168.2.0 0.0.0.255 a
+ex
+ip nat in s l 101 i g0/2 o
+ip route 10.10.10.13 255.255.255.255 10.10.10.25
+ip route 192.168.1.0 255.255.255.248 10.10.10.25
+ip route 0.0.0.0 0.0.0.0 10.10.10.25
+
+R4,4 (Irodarouter4)
+
+en
+conf t
+ho R4
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+ipv6 unicast
+int g0/0.10
+en d 10
+ip add 192.168.2.1 255.255.255.224
+ipv6 add FE80::10 link-local
+ipv6 add FC10::1/64
+ip help 192.168.2.130
+int g0/0.20
+en d 20
+ip add 192.168.2.33 255.255.255.224
+ipv6 add FE80::20 link-local
+ipv6 add FC20::1/64
+ip help 192.168.2.130
+int g0/0.30
+en d 30
+ip add 192.168.2.65 255.255.255.224
+ipv6 add FE80::30 link-local
+ipv6 add FC30::1/64
+ip help 192.168.2.130
+int g0/0.40
+en d 40
+ip add 192.168.2.97 255.255.255.224
+ipv6 add FE80::40 link-local
+ipv6 add FC40::1/64
+ip help 192.168.2.130
+int g0/0.99
+en d 99
+ip add 192.168.2.129 255.255.255.248
+ipv6 add FE80::99 link-local
+ipv6 add FC99::1/64
+int g0/0
+no sh
+int g0/1
+ip add 192.168.2.142 255.255.255.252
+no sh
+int g0/2
+ip add 192.168.2.138 255.255.255.252
+no sh
+ex
+router os 1
+ro 1.1.4.4
+net 192.168.2.0 0.0.0.31 a 1
+net 192.168.2.32 0.0.0.31 a 1
+net 192.168.2.64 0.0.0.31 a 1
+net 192.168.2.96 0.0.0.31 a 1
+net 192.168.2.128 0.0.0.7 a 1
+net 192.168.2.136 0.0.0.3 a 1
+net 192.168.2.140 0.0.0.3 a 1
+pass g0/0
+au
+ex
+Ip acc ex 130
+Per ip host 192.168.2.130 192.168.2.0 0.0.0.31
+Per ip host 192.168.2.130 192.168.2.32 0.0.0.31
+Per ip host 192.168.2.130 192.168.2.64 0.0.0.31
+Per ip host 192.168.2.130 192.168.2.96 0.0.0.31
+Per ip host 192.168.2.130 192.168.2.128 0.0.0.7
+Per ip host 192.168.2.132 192.168.2.0 0.0.0.31
+Per ip host 192.168.2.132 192.168.2.32 0.0.0.31
+Per ip host 192.168.2.132 192.168.2.64 0.0.0.31
+Per ip host 192.168.2.132 192.168.2.96 0.0.0.31
+Per ip host 192.168.2.132 192.168.2.128 0.0.0.7
+Per ip host 192.168.2.130 host 192.168.0.2
+Deny ip any any
+ex
+ip route 192.168.0.0 255.255.255.248 192.168.2.137
+ip route 192.168.1.0 255.255.255.248 192.168.2.141
+ip route 0.0.0.0 0.0.0.0 192.168.2.137
+ip route 0.0.0.0 0.0.0.0 192.168.2.141
+
+
+R3 (Garázsrouter)
+
+en
+conf t
+h R3
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+ip nat ou
+int g0/0
+ip add 192.168.1.1 255.255.255.248
+ip nat in
+no sh
+int s0/0/0
+ip add 10.10.10.13 255.255.255.252
+no sh
+ip nat ou
+int s0/0/1
+ip add 10.10.10.10 255.255.255.252
+no sh
+ip nat ou
+router os 1
+ro 1.1.1.3
+net 10.10.10.8 0.0.0.3 a 0
+net 10.10.10.12 0.0.0.3 a 0
+net 10.10.10.20 0.0.0.3 a 0
+net 192.168.1.0 0.0.0.7 a 1
+pass g0/0
+au
+ex
+_______________________________________________________
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+
+cry is key KULCS add 10.10.10.6
+cry is key KULCS add 10.10.10.17
+cry ip tra R1TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN
+per ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+ex
+Cry is key KULCS3 add 10.10.10.26
+cry ip tra R3TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN3
+perm ip 192.168.1.0 0.0.0.7 192.168.2.0 0.0.0.255
+ex
+cry map R1CMAP 1 ipsec
+set peer 10.10.10.6
+set peer 10.10.10.17
+set tran R1TSET
+Match add VPN
+ex
+cry map R3CMAP 1 ipsec
+set peer 10.10.10.26
+set tran R3TSET
+Match add VPN3
+ex
+int s0/0/1
+cry map R1CMAP
+int s0/0/0
+cry map R3CMAP
+ex
+ip acc ex 101
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+deny ip 192.168.1.0 0.0.0.7 192.168.2.0 0.0.0.255
+per ip 192.168.1.0 0.0.0.7 a
+ip acc ex 102
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/1 o
+ip route 10.10.10.6 255.255.255.255 10.10.10.9
+ip route 10.10.10.17 255.255.255.255 10.10.10.14
+ip route 10.10.10.26 255.255.255.255 10.10.10.14
+ip route 192.168.0.0 255.255.255.248 10.10.10.9
+ip route 192.168.0.0 255.255.255.248 10.10.10.14
+ip route 192.168.2.0 255.255.255.0 10.10.10.14
+ip route 0.0.0.0 0.0.0.0 10.10.10.9
+
+
+
+(Linux server)
+Web (192.168.1.2,255.255.255.248,192.168.1.1)
+
+R2 (Raktárrouter)
+
+en
+conf t
+h R2
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int g0/0
+ip add 192.168.0.1 255.255.255.248
+no sh
+ip nat in
+int s0/0/0
+ip add 10.10.10.6 255.255.255.252
+no sh
+ip nat ou
+int s0/0/1
+ip add 10.10.10.17 255.255.255.252
+no sh
+ip nat ou
+router os 1
+ro 1.1.1.2
+net 10.10.10.4 0.0.0.3 a 0
+net 10.10.10.16 0.0.0.3 a 0
+net 10.10.10.20 0.0.0.3 a 0
+net 192.168.0.0 0.0.0.7 a 1
+pass g0/0
+au
+ex
+_______________________________________________________
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+
+cry is key KULCS add 10.10.10.10
+cry is key KULCS add 10.10.10.13
+cry ip tra R1TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN
+per ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+ex
+cry is key KULCS2 add 10.10.10.22
+cry ip tra R2TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN2
+perm ip 192.168.0.0 0.0.0.7 192.168.2.0 0.0.0.255
+ex
+cry map R1CMAP 1 ipsec
+set peer 10.10.10.10
+set peer 10.10.10.13
+set tran R1TSET
+Match add VPN
+ex
+cry map R2CMAP 1 ipsec
+set peer 10.10.10.22
+set tran R2TSET
+Match add VPN2
+ex
+int s0/0/0
+cry map R1CMAP
+ex
+int s0/0/1
+cry map R2CMAP
+ex
+ip acc ex 101
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+deny ip 192.168.0.0 0.0.0.7 192.168.2.0 0.0.0.255
+per ip 192.168.0.0 0.0.0.7 a
+ip acc ex 102
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/1 o
+ip nat in s l 102 i s0/0/0 o
+ip route 10.10.10.10 255.255.255.255 10.10.10.5
+ip route 10.10.10.13 255.255.255.255 10.10.10.18
+ip route 10.10.10.22 255.255.255.255 10.10.10.18
+ip route 192.168.1.0 255.255.255.248 10.10.10.5
+ip route 192.168.1.0 255.255.255.248 10.10.10.18
+ip route 192.168.2.0 255.255.255.0 10.10.10.18
+ip route 0.0.0.0 0.0.0.0 10.10.10.5
+
+
+Backup (Windowsserver)
+Raktárwifi(192.168.0.2:255.255.255.248:192.168.0.1)
+
+R1 (Őrrouter)
+
+en
+conf t
+h R1
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int s0/0/0
+ip add 10.10.10.5 255.255.255.252
+no sh
+int s0/0/1
+ip add 10.10.10.9 255.255.255.252
+no sh
+int g0/0
+ip add 10.10.10.2 255.255.255.252
+no sh
+router os 1
+ro 1.1.1.1
+net 10.10.10.0 0.0.0.3 a 0
+net 10.10.10.4 0.0.0.3 a 0
+net 10.10.10.8 0.0.0.3 a 0
+def 0
+au
+ex
+ip route 0.0.0.0 0.0.0.0 10.10.10.1
+
+ASA
+
+
+
+ISP1
+
+en
+conf t
+h ISP1
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int g0/1
+ip add 10.10.10.1 255.255.255.252
+no sh
+int g0/0
+ip add 100.10.1.2 255.255.255.252
+no sh
+exit
+router os 1
+net 10.10.10.0 0.0.0.3 a 0
+net 100.10.1.0 0.0.0.3 a 1
+au
+exit
+ip route 10.10.10.0 255.255.255.224 10.10.10.2
+ip route 0.0.0.0 0.0.0.0 10.10.10.2
+
+ISP2
+
+en
+conf t
+h ISP2
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+int g0/1
+ip add 100.10.1.1 255.255.255.252
+no sh
+int g0/0
+ip add 100.10.2.1 255.255.255.252
+no sh
+exit
+router os 1
+net 100.10.2.0 0.0.0.3 a 1
+net 100.10.1.0 0.0.0.3 a 1
+au
+exit
+ip route 10.10.10.0 255.255.255.224 100.10.1.2
+ip route 0.0.0.0 0.0.0.0 100.10.1.2
+
+website(100.10.2.2:255.255.255.252:100.10.2.1) 
+
+
+Garazsswitch
+
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit
+
+Raktarswitch
+
+line consol 0
+pass Puffancs
+login 
+line vty 0 15
+pass Puffancs
+login local
+enable secret Puffancs3
+username Puff_kft password Puffancs
+
+ip domain-name Puff_kft
+crypto key generate rsa
+
+line vty 0 15 
+transport input ssh
+login local
+exit

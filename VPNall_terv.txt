@@ -1,0 +1,131 @@
+R3
+
+Cry is key KULCS3 add 10.10.10.13
+cry ip tra R3TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN3
+
+perm ip 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.7
+ex
+cry map R3CMAP 1 ipsec
+set peer 10.10.10.13
+set tran R3TSET
+Match add VPN3
+ex
+int s0/0/1
+cry map R3CMAP
+ex
+ip acc ex 101
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+deny ip 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ip acc ex 102
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+deny ip 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/1 o
+
+R2
+
+cry is key KULCS2 add 10.10.10.17
+cry ip tra R2TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN2
+Perm ip 192.168.2.0 0.0.0.255 192.168.0.0 0.0.0.7
+Ex
+cry map R2CMAP 1 ipsec
+set peer 10.10.10.17
+set tran R2TSET
+Match add VPN2
+ex
+int s0/0/0
+cry map R2CMAP
+ex
+ip acc ex 101
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+deny ip 192.168.2.0 0.0.0.255 192.168.0.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ip acc ex 102
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+deny ip 192.168.2.0 0.0.0.255 192.168.0.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/1 o
+____
+R4,2
+
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+
+cry is key KULCS2 add 192.168.2.138 
+cry ip tra R2TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN2
+per ip 192.168.0.0 0.0.0.7 192.168.2.0 0.0.0.255
+ex
+cry map R2CMAP 1 ipsec
+set peer 192.168.2.138
+set tran R2TSET
+Match add VPN2
+ex
+int g0/1
+cry map R2CMAP
+ip acc ex 103
+deny ip 192.168.0.0 0.0.0.7 192.168.2.0 0.0.0.255
+per ip 192.168.2.0 0.0.0.255 a
+ex
+ip nat in s l 103 i g0/1 o
+____
+R4,3
+
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+
+cry is key KULCS3 add 192.168.2.142 
+cry ip tra R3TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN3
+per ip 192.168.1.0 0.0.0.7 192.168.2.0 0.0.0.255
+ex
+cry map R3CMAP 1 ipsec
+set peer 192.168.2.142 
+set tran R3TSET
+Match add VPN3
+ex
+int g0/2
+cry map R3CMAP
+ex
+ip acc ex 101
+deny ip 192.168.1.0 0.0.0.7 192.168.2.0 0.0.0.255
+per ip 192.168.2.0 0.0.0.255 a
+ex
+ip nat in s l 101 i g0/2 o
+
+

@@ -1,0 +1,402 @@
+ip	f	Mikrotik
+
+256 MB RAM
+1 CPU
+500 MB SSD
+
+ip/dhcp-client/add di=no interface=ether1
+ip/address/add interface=ether2 address=192.168.0.1/22
+ip/add/add i=ether3 add=192.168.56.99/24
+ip/firewall/nat/add ch=srcnat ac=ma out-interface=ether1
+ip/f/n/ad ch=dstnat ac=dst-nat in-interface=ether3 dst-p=2222 to-a=192.168.1.2 to-p=22 pro=tcp
+ip/f/n/ad ch=dstnat ac=dst-nat in-interface=ether3 dst-p=55000 to-a=192.168.0.2 to-p=3389 pro=tcp
+ip/f/n/ad ch=dstnat ac=dst-nat in-interface=ether3 dst-p=50000 to-a=192.168.2.130 to-p=3389 pro=tcp
+
+Windows
+winseverpdc
+
+
+4 GB RAM
+2 CPU
+50 GB SSD
+
+eng
+hu
+hu
+
+next
+
+gui
+
+next
+
+pipa
+
+next
+
+next
+
+Administrator
+Passw0rd
+
+Static ip
+192.168.2.130,255.255.252.0,192.168.0.1
+
+windowspdc
+!!FELHASZNÁLÓK/CSOPORTOK!!
+
+telepíteni: AD,DNS,DHCP
+
+AD:
+domain: puff.kft
+2012 R2
+Pass: #Puffancs3
+elkészítés
+
+DHCP:
+ipv4 new scope
+Puff.kft_v4scope_V10
+startip 192.168.2.2
+endip 192.168.2.30
+mask 255.255.255.224 /27
+defaultgate 192.168.2.1
+DNS 192.168.2.130,192.168.0.2
+next
+
+ipv4 new scope
+Puff.kft_v4scope_V20
+startip 192.168.2.34
+endip 192.168.2.62
+mask 255.255.255.224 /27
+defaultgate 192.168.2.33
+DNS 192.168.2.130,192.168.0.2
+next
+
+ipv4 new scope
+Puff.kft_v4scope_V30
+startip 192.168.2.66
+endip 192.168.2.94
+mask 255.255.255.224 /27
+defaultgate 192.168.2.65
+DNS 192.168.2.130,192.168.0.2
+next
+
+ipv4 new scope
+Puff.kft_v4scope_V40
+startip 192.168.2.98
+endip 192.168.2.126
+mask 255.255.255.224 /27
+defaultgate 192.168.2.97
+DNS 192.168.2.130,192.168.0.2
+next
+
+ipv4 new scope
+Puff.kft_v4scope_V99
+startip 192.168.2.131
+endip 192.168.2.134
+/29
+defaultgate 192.168.2.129
+DNS 192.168.2.130,192.168.0.2
+next
+
+
+bdc beállítás után failover beállítás
+
+DNS:
+forward lookup zones:
+aaa: "",192.168.1.2
+aaa: www,192.168.1.2
+aaa: ftp,192.168.1.2
+
+Reverse lookup zones:
+new pointer
+192.168.2.130, winserverpdc
+new pointer
+192.168.1.2, linuxserverweb
+new pointer
+192.168.0.2, winserverbdc
+
+
+
+winserverbdc
+
+4 GB RAM
+2 CPU
+50 GB SSD
+
+eng
+hu
+hu
+
+next
+
+gui
+
+next
+
+pipa
+
+next
+
+next
+
+Administrator
+Passw0rd
+
+Static ip
+192.168.0.2,255.255.252.0,192.168.0.1
+
+windowsbdc
+
+telepíteni: AD,DNS,DHCP
+
+AD:
+meglévő domain: puff.kft
+mirroring: winserverpdc
+Pass: #Puffancs3
+elkészítés
+
+DHCP:
+elkésítés
+
+
+
+Linux
+linuxserverweb
+
+alap install
+nyelv eng UK hu
+
+
+hostname: pufi
+domain: puff.kft
+root jelszó: root
+user full name: puffancs
+user jelszó: user
+
+label: linuxserverweb
+label: home
+
+[global]
+
+workgroup = PUFF
+password server = winserverpdc.puff.kft winserverbdc.puff.kft
+realm = PUFF.KFT
+security =ads
+idmap config * : range = 16777216-33554431
+template homedir = /home/%U
+template shell = bin/bash
+winbind use default domain = true
+winbind offline logon = false
+vfs objects = acl_xattr
+map acl inherit = yes
+store dos attributes = yes
+
+
+net rpc rights grant "PUFF\Domain Admins" SeDiskOperatorPrivilege -U "PUFF\administrator"
+
+net rpc rights list privileges SeDiskOperatorPrivilege -U "PUFF\administrator"
+
+CANAME=PUFF-RootCA
+
+PEM jelszó: #Puffancs3
+
+cp ~/PUFF-RootCA.crt /mnt/sdb1/certificates\$/
+
+WEBCERT=pufi
+
+[alt_names]
+DNS.1 = puff.kft
+DNS.2 = www.puff.kft
+IP.1 = 192.168.1.2
+
+
+
+CANAME=PUFF-RootCA
+
+
+
+<Directory /var/www/puff>
+	Options Indexes FollowSymLinks
+	Require all granted
+	AllowOverride All
+</Directory>
+
+<VirtualHost *:80>
+	ServerName pufi.puff.kft
+	ServerAlias puff.kft
+	DocumentRoot /var/www/puff/
+#	ErrorLog ${APACHE_LOG_DIR}/error.log
+#	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+	ServerName pufi.puff.kft
+	ServerAlias puff.kft
+	DocumentRoot /var/www/puff/
+#	ErrorLog /var/www/html/htdocs/logs/error.log
+#	CustomLog /var/www/html/htdocs/logs/access.log combined
+	SSLEngine on
+	SSLCertificateFile		/root/pufi.crt
+	SSLCertificateKeyFile		/root/pufi.key
+	
+<FilesMatch "\.(cgi|shtml|phtml|php)$">
+	SSLOptions +StdEnvVars
+</FilesMatch>
+
+<Directory /usr/lib/cgi-bin>
+	SSLOptions +StdEnvVars
+</Directory>
+
+	BrowserMatch "MSIE [2-6]"\
+	nokeepalive ssl-unclean-shutdown \
+	downgrade-1.0 force-response-1.0
+</VirtualHost>
+
+
+
+mkdir /var/www/puff
+chmod -R 755 /var/www/puff
+
+addgroup sftponly
+adduser sftpuser
+(jelszó: #Puffancs3)
+
+chown -R sftpuser:www-data /var/www/puff
+
+
+nano /var/www/puff/.htaccess
+
+
+felhasználó jelszó: #Puffancs3
+
+#	Last Name	First Name	User Logon Name
+1	Nagy	István	nagy.istvan
+2	Kiss	Mária	kiss.maria
+3	Szabó	János	szabo.janos
+4	Kovács	Péter	kovacs.peter
+5	Tóth	Anna	toth.anna
+6	Fodor	Károly	fodor.karoly
+7	Balázs	Edit	balazs.edit
+8	Veres	Norbert	veres.norbert
+9	Szekeres	Dóra	szekeres.dora
+10	Molnár	Tamás	molnar.tamas
+11	Horváth	Zsolt	horvath.zsolt
+12	Lakatos	Renáta	lakatos.renata
+13	Juhász	Márton	juhasz.marton
+14	Papi	Boglárka	papi.boglarka
+15	Vass	Zoltán	vass.zoltan
+16	Halász	Róbert	halasz.robert
+17	Barta	Mihály	barta.mihaly
+18	Simon	Krisztina	simon.krisztina
+19	Farkas	Gergő	farkas.gergo
+20	Bogdán	Eszter	bogdan.eszter
+___________________________________________________
+21	Mészáros	József	meszaros.jozsef
+22	Demeter	Éva	demeter.eva
+23	Nagy	Benjamin	nagy.benjamin
+24	Jakab	Beáta	jakab.beata
+25	Csóka	András	csoka.andras
+___________________________________________________
+26	Baráth	Nikolett	barath.nikolett
+
+
+#Puffancs3
+
+
+
+quotatool -u nagy.istvan -b -q 500M /dev/sdb1
+quotatool -u meszaros.jozsef -b -q 500M /dev/sdb1
+quotatool -g "domain users" -b -q 1G /dev/sdb2
+
+
+SMB jelszó: #Puffancs3
+
+
+
+
+cd /mnt/sdb1/
+mkdir shares/
+chown root:"Domain Admins" shares/
+chmod 0770 shares/
+cd /mnt/sdb2/
+mkdir common_folder/
+chown root:"Domain Admins" common_folder/
+chmod 0770 common_folder/
+
+
+
+
+net use \\192.168.1.2\shares /user:PUFI\Administrator Puffancs3
+
+
+
+
+
+
+
+net rpc rights grant "PUFF\Domain Admins" SeDiskOperatorPrivilege -U "PUFF\administrator"
+(Puffancs3)
+net rpc rights list privileges SeDiskOperatorPrivilege -U "PUFF\administrator"
+(Puffancs3)
+
+
+
+
+ls -ld /mnt/út/a/mappához
+sudo chown root:root /mnt/sdb1/shares
+sudo chmod 700 /mnt/sdb1/shares
+mount | grep /mnt/sdb1/shares
+
+
+sudo chmod 770 /elérési/út/a/mappához
+
+
+sudo setfacl -m u:root:rwx /mnt/sdb1/shares
+
+
+Owner:root (Unix User\root) 
+
+apt install cups-pdf -y
+nano /etc/cups/cupsd.conf
+
+
+pdc
+
+windows server backup
+telepitése
+windows server backup
+Getting Started: next
+Select Backup Configuration: °full server
+Spacify Backup Time: 18:00
+Specify Destination Type: Back up to a shared network folder
+Specify Remote Shared Folder: Location "shared folder" , ° Inherit
+Confirmation
+
+C:\Windows\PolicyDefinitions
+
+for ip in 192.168.2.2 192.168.2.130; do
+    scp install_firefox.sh nagy.istvan@$ip:/root/
+done
+
+
+######### nem működik!
+apt install ansible
+mkdir -p/etc/ansible
+nano firefox_install.yml
+
+
+---
+- name: Firefox telepítése klienseken
+  hosts: clients
+  become: true
+  tasks:
+    - name: Csomaglista frissítése
+      apt:
+        update_cache: yes
+
+    - name: Firefox telepítése
+      apt:
+        name: firefox
+        state: present
+#########

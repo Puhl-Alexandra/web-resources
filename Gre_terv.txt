@@ -1,0 +1,43 @@
+R4,3
+
+int tunnel 3
+ip add 10.10.10.34 255.255.255.252
+no sh
+tunnel source g0/2
+tunnel destination 10.10.10.13
+ex
+
+ip route 192.168.1.0 255.255.255.248 10.10.10.33
+
+R4,2
+
+int tunnel 2
+ip add 10.10.10.30 255.255.255.252
+no sh
+tunnel source g0/1
+tunnel destination 10.10.10.17
+ex
+
+ip route 192.168.0.0 255.255.255.248 10.10.10.29
+
+R3
+
+int tunnel 3
+ip add 10.10.10.33 255.255.255.252
+no sh
+tunnel source s0/0/0
+tunnel destination 10.10.10.14
+ex
+
+ip route 192.168.2.0 255.255.255.0 10.10.10.34
+
+R2
+
+int tunnel 2
+ip add 10.10.10.29 255.255.255.252
+no sh
+tunnel source s0/0/1
+tunnel destination 10.10.10.18
+ex
+
+ip route 192.168.2.0 255.255.255.0 10.10.10.30

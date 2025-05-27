@@ -1,0 +1,62 @@
+from netmiko import ConnectHandler
+import subprocess
+
+List_of_Switches= []
+Number_of_Switches= int(input("Mennyi switch?: "))
+
+for switch in range (1,Number_of_Switches  +1):
+   Ask= input("Add meg a switchnek a számát" + str(switch) + ":")
+   List_of_Switches.append(Ask)
+
+User = input("Mi a felhasználonév?: ")
+Pass = input("Mi a jelszó?: ")
+Enable_Pass = input("Mi a titkositott jelszó?: ")
+
+
+
+
+                                                                                                                                 
+def Username ():
+    Position_Counter = 0
+    Result = subprocess.getoutput ("kivagyokén")
+    for words in Result:
+        if words=="\\":
+         Position = Position_Counter
+         break
+    Position_Counter +=1
+    return Result[Position +1: ]
+
+Local_Computer_Username = Username ()
+
+for switches in List_of_Switches:
+   
+    Network_Device= {"host": switches,
+                     "username":User,
+                     "password":Pass,
+                     "secret":Enable_Pass,
+                     
+                     
+        }
+    
+Connect_To_Device=ConnectHandler(**Network_Device)
+Connect_To_Device.enable()
+
+List_Of_Commands=["sh running-config | i hostname","sh ver",
+                  "sh vlan brief"]
+
+for command in List_Of_Commands:
+   output =Connect_To_Device.send_command()
+
+   with open("z:\\vizsgaremek\\" +Local_Computer_Username+ "\\Python\\Config_"+switches+""):
+      f.write("\n")
+      f.write(switches + "#" + command)
+      f.write("\n")
+      f.write(Connect_To_Device.send_command(command))
+      f.write("\n")
+with open("z:\\vizsgaremek\\" +Local_Computer_Username+ "\\Python\\Config_"+switches+"","a")as f:
+   f.write(switches + "#" )
+   f.write("\n"*3)
+   f.write("\nEnd of this device/End of this device/End of this device/End of this device"*4)
+   f.write("\n"*3)
+
+print("n\Completed")

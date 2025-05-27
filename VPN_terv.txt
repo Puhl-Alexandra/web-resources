@@ -1,0 +1,98 @@
+R3
+
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+cry is key KULCS add 10.10.10.6
+cry is key KULCS add 10.10.10.17
+cry ip tra R1TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN
+per ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+ex
+cry map R1CMAP 1 ipsec
+set peer 10.10.10.6
+set peer 10.10.10.17
+set tran R1TSET
+Match add VPN
+ex
+int s0/0/0
+cry map R1CMAP
+int s0/0/1
+cry map R1CMAP
+ex
+ip acc ex 101
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ex
+ip acc ex 102
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/1 o
+
+4. The NAT table does not have a matched entry for this packet. It passes the packet through without translations.
+5. The traffic is interesting traffic and needs to be encrypted and encapsulated in IPSec PDUs.
+6. The interesting traffic can not be encrypted, IKE (ISAKMP) needs to negotatiate IPSec SAs.
+
+%CRYPTO-4-IKMP_NO_SA: IKE message from 192.168.0.4 has no SA and is not an  initialization offer
+
+%CRYPTO-4-RECVD_PKT_INV_SPI: decaps rec'd IPSEC packet has invalid spi for destaddr=192.168.1.4, prot=50, spi=0x07b99489(129602697), srcaddr=192.168.0.4
+
+
+R2
+
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+cry is key KULCS add 10.10.10.10
+cry is key KULCS add 10.10.10.13
+cry ip tra R1TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN
+per ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+ex
+cry map R1CMAP 1 ipsec
+set peer 10.10.10.10
+set peer 10.10.10.13
+set tran R1TSET
+Match add VPN
+ex
+int s0/0/0
+cry map R1CMAP
+int s0/0/1
+cry map R1CMAP
+ex
+ip acc ex 101
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ex
+ip acc ex 102
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/0 o

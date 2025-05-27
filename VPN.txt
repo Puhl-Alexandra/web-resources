@@ -1,0 +1,97 @@
+R3
+
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+cry is key KULCS add 10.10.10.6
+cry is key KULCS add 10.10.10.17
+cry ip tra R1TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN
+per ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+ex
+cry map R1CMAP 1 ipsec
+set peer 10.10.10.6
+set peer 10.10.10.17
+set tran R1TSET
+Match add VPN
+ex
+int s0/0/0
+cry map R1CMAP
+int s0/0/1
+cry map R1CMAP
+ex
+ip acc ex 101
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ex
+ip acc ex 102
+deny ip 192.168.1.0 0.0.0.7 192.168.0.0 0.0.0.7
+per ip 192.168.1.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/1 o
+ip route 10.10.10.6 255.255.255.255 10.10.10.9
+ip route 10.10.10.17 255.255.255.255 10.10.10.14
+ip route 192.168.0.0 255.255.255.248 10.10.10.9
+ip route 192.168.0.0 255.255.255.248 10.10.10.14
+
+R2
+
+license boot module c2900 technology-package securityk9
+yes
+do write
+do reload
+
+en
+conf t
+cry is po 1
+hash sha
+au pr
+group 2
+lifetime 86400
+en 3des
+ex
+cry is key KULCS add 10.10.10.10
+cry is key KULCS add 10.10.10.13
+cry ip tra R1TSET esp-aes 128 esp-md5-hmac
+cry ip security-a lifetime sec 3600
+ip acc ex VPN
+per ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+ex
+cry map R1CMAP 1 ipsec
+set peer 10.10.10.10
+set peer 10.10.10.13
+set tran R1TSET
+Match add VPN
+ex
+int s0/0/0
+cry map R1CMAP
+int s0/0/1
+cry map R1CMAP
+ex
+ip acc ex 101
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ex
+ip acc ex 102
+deny ip 192.168.0.0 0.0.0.7 192.168.1.0 0.0.0.7
+per ip 192.168.0.0 0.0.0.7 a
+ex
+ip nat in s l 101 i s0/0/0 o
+ip nat in s l 102 i s0/0/0 o
+ip route 10.10.10.10 255.255.255.255 10.10.10.5
+ip route 10.10.10.13 255.255.255.255 10.10.10.18
+ip route 192.168.1.0 255.255.255.248 10.10.10.5
+ip route 192.168.1.0 255.255.255.248 10.10.10.18

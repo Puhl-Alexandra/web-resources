@@ -1,0 +1,18 @@
+en
+
+conf t
+ho ASA
+clock set 11:55:30 30 march 2025
+int g1/1
+ip add 10.10.10.1 255.255.255.252
+no sh
+nameif INSIDE
+sec 100
+ex
+int g1/2
+ip add 100.10.0.2 255.255.255.252
+no sh
+nameif OUTSIDE
+sec 70
+ex
+write memo
